@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "/Users/amberwon/cs/Pet-Pals/app/build/intermediates/res/merged/debug/mipmap-xhdpi/ic_launcher.png",
+        "source": "/Users/amberwon/cs/Pet-Pals/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/amberwon/cs/Pet-Pals/app/build/intermediates/res/merged/debug/mipmap-xhdpi/ic_launcher_round.png",
+        "source": "/Users/amberwon/cs/Pet-Pals/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png"
+    }
+]

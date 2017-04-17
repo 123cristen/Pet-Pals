@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "/Users/amberwon/cs/Pet-Pals/app/build/intermediates/res/merged/debug/layout-v21/notification_template_icon_group.xml",
+        "source": "/Users/amberwon/.android/build-cache/30b1a413100f332afa4c7c0e986dd0126ec1797b/output/res/layout-v21/notification_template_icon_group.xml"
+    },
+    {
+        "merged": "/Users/amberwon/cs/Pet-Pals/app/build/intermediates/res/merged/debug/layout-v21/notification_action_tombstone.xml",
+        "source": "/Users/amberwon/.android/build-cache/30b1a413100f332afa4c7c0e986dd0126ec1797b/output/res/layout-v21/notification_action_tombstone.xml"
+    },
+    {
+        "merged": "/Users/amberwon/cs/Pet-Pals/app/build/intermediates/res/merged/debug/layout-v21/notification_template_custom_big.xml",
+        "source": "/Users/amberwon/.android/build-cache/30b1a413100f332afa4c7c0e986dd0126ec1797b/output/res/layout-v21/notification_template_custom_big.xml"
+    },
+    {
+        "merged": "/Users/amberwon/cs/Pet-Pals/app/build/intermediates/res/merged/debug/layout-v21/notification_action.xml",
+        "source": "/Users/amberwon/.android/build-cache/30b1a413100f332afa4c7c0e986dd0126ec1797b/output/res/layout-v21/notification_action.xml"
+    }
+]
