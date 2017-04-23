@@ -1,4 +1,0 @@
-#Mon Apr 17 11:08:04 PDT 2017
-base.0=/Users/amberwon/cs/Pet-Pals/app/build/intermediates/transforms/dex/debug/folders/1000/5/slice_8
-renamed.0=classes.dex
-file.0=/Users/amberwon/cs/Pet-Pals/app/build/intermediates/transforms/dex/debug/folders/1000/5/slice_8/classes.dex
