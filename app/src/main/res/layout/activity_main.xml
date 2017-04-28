@@ -24,6 +24,13 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toTopOf="@id/hello" />
+    <ImageView
+        android:id="@+id/food_view"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/hello"
+         />
 
     <Button
         android:id="@+id/button_send"
