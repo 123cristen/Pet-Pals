@@ -1,4 +1,4 @@
-package com.example.bluetooth;
+package com.petpals;
 
 import android.bluetooth.BluetoothSocket;
 import android.support.v7.app.AppCompatActivity;
@@ -23,7 +23,7 @@ public class Bluetooth extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_bluetooth);
+        //setContentView(R.layout.activity_main);
 
         // SEND: Register for broadcasts when a device is discovered.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);

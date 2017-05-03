@@ -1,4 +1,4 @@
-package com.example.bluetooth; /**
+package com.petpals; /**
  * Created by cristen on 5/1/17.
  */
 import android.bluetooth.BluetoothAdapter;
@@ -15,7 +15,7 @@ public class AcceptThread extends Thread {
     private static final String NAME = "PetPals";
     private static final String MY_UUID = "2ecc0aa6-2e97-11e7-93ae-92361f002671";
     private final BluetoothServerSocket mmServerSocket;
-    private BluetoothAdapter mBluetoothAdapter;
+    private final BluetoothAdapter mBluetoothAdapter;
 
     public AcceptThread() {
         // Use a temporary object that is later assigned to mmServerSocket
