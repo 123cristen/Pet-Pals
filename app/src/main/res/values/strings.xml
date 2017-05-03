@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Pet Pals</string>
+    <string name="pet_name">Pet Name</string>
+    <string name="submit">Submit</string>
 </resources>
