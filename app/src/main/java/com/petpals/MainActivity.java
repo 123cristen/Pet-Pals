@@ -1,12 +1,16 @@
 package com.petpals;
 
+import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -14,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     AnimationDrawable foodAnimation;
     PixelTextView scoreView;
 
+    boolean isPal;
     int score;
 
     @Override
@@ -34,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
         scoreView = (PixelTextView) findViewById(R.id.scoreboard);
         score = 0;
         scoreView.setText("0");
+
+        isPal = false;
     }
 
     public void onSend(View v)
@@ -48,17 +55,29 @@ public class MainActivity extends AppCompatActivity {
 
     public void onFeed(View v)
     {
-        Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
+        // Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
 
-        if (foodAnimation.isRunning()) {
-            foodAnimation.stop();
+        if (isPal) {
+            // feed them
+            if (foodAnimation.isRunning()) {
+                foodAnimation.stop();
+            }
+
+            foodAnimation.start();
+
+            // TODO: do whatever with score if we want it.
+            score++;
+            Log.d("new score", String.valueOf(score));
+            scoreView.setText(String.valueOf(score));
         }
-
-        foodAnimation.start();
-
-        // TODO: do whatever with score if we want it.
-        score++;
-        Log.d("new score", String.valueOf(score));
-        scoreView.setText(String.valueOf(score));
+        else{
+            ;
+            // create Pal
+//            Intent intent = new Intent(this, CreatePetActivity.class);
+//            EditText editText = (EditText) findViewById(R.id.editText);
+//            String message = editText.getText().toString();
+//            intent.putExtra(EXTRA_MESSAGE, message);
+//            startActivity(intent);
+        }
     }
 }
