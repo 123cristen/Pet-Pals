@@ -44,7 +44,7 @@
         app:layout_constraintBottom_toBottomOf="@id/hello"
          />
 
-    <Button
+    <com.petpals.PixelButton
         android:id="@+id/button_send"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -53,7 +53,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <Button
+    <com.petpals.PixelButton
         android:id="@+id/button_receive"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -63,7 +63,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <Button
+    <com.petpals.PixelButton
         android:id="@+id/button_feed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
