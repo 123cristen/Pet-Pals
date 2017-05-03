@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // TODO: load from file before adding animation
         ImageView palImage = (ImageView) findViewById(R.id.pal_view);
         palImage.setBackgroundResource(R.drawable.pal_animation);
         palAnimation = (AnimationDrawable) palImage.getBackground();
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
         foodAnimation.start();
 
-        // update score
+        // TODO: do whatever with score if we want it.
         score++;
         Log.d("new score", String.valueOf(score));
         scoreView.setText(String.valueOf(score));
