@@ -45,6 +45,7 @@ public class AcceptThread extends Thread {
             if (socket != null) {
                 // A connection was accepted. Perform work associated with
                 // the connection in a separate thread.
+                Log.d(TAG, "Managing connection");
                 Bluetooth.manageMyConnectedSocket(socket);
                 try {
                     mmServerSocket.close();

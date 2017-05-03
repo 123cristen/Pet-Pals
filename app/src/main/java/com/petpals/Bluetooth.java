@@ -11,11 +11,13 @@ import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.widget.Toast;
+import android.util.Log;
 
 // TODO(cristen): add error message if not enabled
 
 public class Bluetooth extends AppCompatActivity {
     // assign this constant to a non-zero value
+    private static final String TAG = "Bluetooth: ";
     static final int REQUEST_ENABLE_BT = 3;
     static final int REQUEST_DISCOVERABLE = 4;
     private BluetoothAdapter mBluetoothAdapter;
@@ -23,7 +25,7 @@ public class Bluetooth extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
         // SEND: Register for broadcasts when a device is discovered.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -108,13 +110,14 @@ public class Bluetooth extends AppCompatActivity {
 
     // SEND
     protected void sendBluetooth() {
-
+        Log.d(TAG, "in sendBluetooth1");
         // get the Bluetooth adaptor
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             Toast.makeText(getApplicationContext(), "Device doesn't support Bluetooth", Toast.LENGTH_LONG).show();
             return;
         }
+        Log.d(TAG, "in sendBluetooth2");
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
