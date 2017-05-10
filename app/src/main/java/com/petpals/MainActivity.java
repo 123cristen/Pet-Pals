@@ -22,6 +22,7 @@ import static android.provider.AlarmClock.EXTRA_MESSAGE;
 public class MainActivity extends AppCompatActivity {
 
     String FILENAME = "pet_info";
+    String file;
     String petName;
 
     AnimationDrawable palAnimation;
@@ -31,12 +32,12 @@ public class MainActivity extends AppCompatActivity {
     boolean isPal;
     int score;
 
-    private boolean getPetInformation() {
+    private String getPetInformation() {
         FileInputStream fileInputStream = null;
         try {
             fileInputStream = openFileInput(FILENAME);
         } catch (FileNotFoundException e) {
-            return false;
+            return null;
         }
 
         InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
@@ -55,9 +56,9 @@ public class MainActivity extends AppCompatActivity {
 
         String file = stringBuilder.toString();
         String[] values = file.split(",");
-
         petName = values[0];
-        return true;
+
+        return file;
     }
 
     @Override
