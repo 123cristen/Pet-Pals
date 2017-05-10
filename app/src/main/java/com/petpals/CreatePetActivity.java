@@ -23,9 +23,9 @@ public class CreatePetActivity extends AppCompatActivity {
 
     public void submitName(View button) {
         Log.d("CreatePetActivity", "submitted name");
-        
+
         EditText petNameText = (EditText) findViewById(R.id.EditPetName);
-        String petName = petNameText.getText().toString() + ",";
+        String petName = petNameText.getText().toString();
 
         FileOutputStream fileOutputStream = null;
         try {
@@ -34,13 +34,14 @@ public class CreatePetActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         try {
-            fileOutputStream.write(petName.getBytes());
+            fileOutputStream.write((petName + ";").getBytes());
             fileOutputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("PET_NAME", "petName");
         startActivity(intent);
     }
 }
