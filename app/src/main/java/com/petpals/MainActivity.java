@@ -1,5 +1,7 @@
 package com.petpals;
 
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.AnimationDrawable;
 import android.support.v7.app.AppCompatActivity;
@@ -9,7 +11,16 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 public class MainActivity extends AppCompatActivity {
+
+    String FILENAME = "pet_info";
+    String petName;
 
     AnimationDrawable palAnimation;
     AnimationDrawable foodAnimation;
@@ -17,10 +28,41 @@ public class MainActivity extends AppCompatActivity {
 
     int score;
 
+    private void getPetInformation() {
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = openFileInput(FILENAME);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+
+        try {
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            fileInputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String file = stringBuilder.toString();
+        String[] values = file.split(",");
+
+        petName = values[0];
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getPetInformation();
+        Log.d("MainActivity", "Name: " + petName);
 
         // TODO: load from file before adding animation
         ImageView palImage = (ImageView) findViewById(R.id.pal_view);
