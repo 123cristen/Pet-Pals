@@ -113,13 +113,9 @@ public class MainActivity extends AppCompatActivity {
             scoreView.setText(String.valueOf(score));
         }
         else{
-            ;
             // create Pal
-//            Intent intent = new Intent(this, CreatePetActivity.class);
-//            EditText editText = (EditText) findViewById(R.id.editText);
-//            String message = editText.getText().toString();
-//            intent.putExtra(EXTRA_MESSAGE, message);
-//            startActivity(intent);
+            Intent intent = new Intent(this, CreatePetActivity.class);
+            startActivity(intent);
         }
     }
 }
