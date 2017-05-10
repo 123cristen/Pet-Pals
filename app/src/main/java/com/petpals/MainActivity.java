@@ -31,12 +31,12 @@ public class MainActivity extends AppCompatActivity {
     boolean isPal;
     int score;
 
-    private void getPetInformation() {
+    private boolean getPetInformation() {
         FileInputStream fileInputStream = null;
         try {
             fileInputStream = openFileInput(FILENAME);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            return false;
         }
 
         InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         String[] values = file.split(",");
 
         petName = values[0];
+        return true;
     }
 
     @Override
