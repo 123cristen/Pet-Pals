@@ -45,30 +45,27 @@
          />
 
     <com.petpals.PixelButton
-        android:id="@+id/button_send"
+        android:id="@+id/button_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send"
-        android:onClick="onSend"
+        android:onClick="onButtonLeft"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
     <com.petpals.PixelButton
-        android:id="@+id/button_receive"
+        android:id="@+id/button_middle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Receive"
-        android:onClick="onReceive"
+        android:onClick="onButtonMiddle"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
     <com.petpals.PixelButton
-        android:id="@+id/button_feed"
+        android:id="@+id/button_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="FeedOpen"
-        android:onClick="onFeed"
+        android:onClick="onButtonRight"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
