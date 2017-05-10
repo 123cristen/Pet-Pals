@@ -31,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
     AnimationDrawable palAnimation;
     AnimationDrawable foodAnimation;
     PixelTextView scoreView;
+    PixelButton b_left;
+    PixelButton b_middle;
+    PixelButton b_right;
 
     boolean isPal;
     int score;
@@ -68,25 +71,52 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        getPetInformation();
         Log.d("MainActivity", "Name: " + petName);
+        b_left = (PixelButton) findViewById(R.id.button_left);
+        b_middle = (PixelButton) findViewById(R.id.button_middle);
+        b_right = (PixelButton) findViewById(R.id.button_right);
 
-        // TODO: load from file before adding animation
-        ImageView palImage = (ImageView) findViewById(R.id.pal_view);
-        palImage.setBackgroundResource(R.drawable.pal_animation);
-        palAnimation = (AnimationDrawable) palImage.getBackground();
-        palAnimation.start();
+        String files = getPetInformation();
+        if (files == null || files == ""){
+            isPal = false;
+            b_left.setText("receive");
+            b_middle.setText("poke");
+            b_right.setText("create");
+        }
+        else {
+            isPal = true;
 
-        ImageView foodImage = (ImageView) findViewById(R.id.food_view);
-        foodImage.setBackgroundResource(R.drawable.food_animation);
-        foodAnimation = (AnimationDrawable) foodImage.getBackground();
+            b_left.setText("send");
+            b_middle.setText("poke");
+            b_right.setText("feed");
 
-        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
-        score = 0;
-        scoreView.setText("0");
+            ImageView palImage = (ImageView) findViewById(R.id.pal_view);
+            palImage.setBackgroundResource(R.drawable.pal_animation);
+            palAnimation = (AnimationDrawable) palImage.getBackground();
+            palAnimation.start();
 
-        isPal = false;
+            ImageView foodImage = (ImageView) findViewById(R.id.food_view);
+            foodImage.setBackgroundResource(R.drawable.food_animation);
+            foodAnimation = (AnimationDrawable) foodImage.getBackground();
+            scoreView = (PixelTextView) findViewById(R.id.scoreboard);
+            score = 0;
+            scoreView.setText("0");
+        }
+    }
+
+    public void onButtonLeft(View v){
+        if (isPal)  onSend(v);
+        else        onReceive(v);
+    }
+
+    public void onButtonMiddle(View v){
+        // TODO: insert some fun features
+        ;
+    }
+
+    public void onButtonRight(View v){
+        if (isPal)  onFeed(v);
+        else        onPalCreate(v);
     }
 
     @Override
@@ -122,34 +152,28 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
+    public void onPalCreate(View v){
+        // create Pal
+        Intent intent = new Intent(this, CreatePetActivity.class);
+        startActivity(intent);
+    }
+
     public void onFeed(View v)
     {
         // Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
-
-        if (isPal) {
-            // feed them
-            if (foodAnimation.isRunning()) {
-                foodAnimation.stop();
-            }
-
-            foodAnimation.start();
-
-            Calendar calendar = Calendar.getInstance();
-            lastFed = calendar.getTimeInMillis();
-
-            // TODO: do whatever with score if we want it.
-            score++;
-            Log.d("new score", String.valueOf(score));
-            scoreView.setText(String.valueOf(score));
+        // feed them
+        if (foodAnimation.isRunning()) {
+            foodAnimation.stop();
         }
-        else{
-            ;
-            // create Pal
-//            Intent intent = new Intent(this, CreatePetActivity.class);
-//            EditText editText = (EditText) findViewById(R.id.editText);
-//            String message = editText.getText().toString();
-//            intent.putExtra(EXTRA_MESSAGE, message);
-//            startActivity(intent);
-        }
+
+        foodAnimation.start();
+
+        Calendar calendar = Calendar.getInstance();
+        lastFed = calendar.getTimeInMillis();
+
+        // TODO: do whatever with score if we want it.
+        score++;
+        Log.d("new score", String.valueOf(score));
+        scoreView.setText(String.valueOf(score));
     }
 }
