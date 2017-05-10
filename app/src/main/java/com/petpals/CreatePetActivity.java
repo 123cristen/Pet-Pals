@@ -18,6 +18,8 @@ public class CreatePetActivity extends AppCompatActivity {
     public void submitName(View button) {
         Log.d("CreatePetActivity", "submitted name");
 
+        // TODO: show error if name includes commas
+
         EditText petNameText = (EditText) findViewById(R.id.EditPetName);
         String petName = petNameText.getText().toString();
 

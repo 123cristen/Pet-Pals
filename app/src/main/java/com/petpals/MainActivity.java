@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     String FILENAME = "pet_info";
     String file;
     String petName;
+    long lastFed = 0;
 
     AnimationDrawable palAnimation;
     AnimationDrawable foodAnimation;
@@ -93,10 +94,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
 
         // Store pet info
-        Calendar calendar = Calendar.getInstance();
-        long time = calendar.getTimeInMillis();
-
-        String petInfoString = petName + "," + time;
+        String petInfoString = petName + "," + lastFed;
 
         Log.d("INFO", petInfoString);
 
@@ -135,6 +133,9 @@ public class MainActivity extends AppCompatActivity {
             }
 
             foodAnimation.start();
+
+            Calendar calendar = Calendar.getInstance();
+            lastFed = calendar.getTimeInMillis();
 
             // TODO: do whatever with score if we want it.
             score++;
