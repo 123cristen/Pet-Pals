@@ -23,6 +23,7 @@ public class CreatePetActivity extends AppCompatActivity {
 
     public void submitName(View button) {
         Log.d("CreatePetActivity", "submitted name");
+        
         EditText petNameText = (EditText) findViewById(R.id.EditPetName);
         String petName = petNameText.getText().toString() + ",";
 
