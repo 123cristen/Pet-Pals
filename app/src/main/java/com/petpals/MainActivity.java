@@ -25,8 +25,6 @@ public class MainActivity extends AppCompatActivity {
 
     String FILENAME = "pet_info";
     String file;
-    String petName;
-    long lastFed = 0;
 
     AnimationDrawable palAnimation;
     AnimationDrawable foodAnimation;
@@ -36,7 +34,10 @@ public class MainActivity extends AppCompatActivity {
     PixelButton b_right;
 
     boolean isPal;
+    String petName;
+    long lastFed = 0;
     int score;
+    int health = 0; // Max is 10
 
     private String getPetInformation() {
         FileInputStream fileInputStream = null;
@@ -62,9 +63,32 @@ public class MainActivity extends AppCompatActivity {
 
         String file = stringBuilder.toString();
         String[] values = file.split(",");
-        petName = values[0];
+
+        if (values.length == 3) {
+            petName = values[0];
+            lastFed = Long.parseLong(values[1]);
+            health = Integer.parseInt(values[2]);
+        }
 
         return file;
+    }
+
+    private void updateHealth() {
+        Calendar calendar = Calendar.getInstance();
+        long now = calendar.getTimeInMillis();
+        int diff = (int) ((now - lastFed)/(1000)); // in seconds for testing
+                //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
+
+        if (health - diff >= 0) {
+            health = health - diff;
+        } else {
+            health = 0;
+        }
+    }
+
+    private void displayHealth() {
+        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
+        scoreView.setText(Integer.toString(health));
     }
 
     @Override
@@ -77,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
         b_right = (PixelButton) findViewById(R.id.button_right);
 
         String files = getPetInformation();
+
         if (files == null || files == ""){
             isPal = false;
             b_left.setText("receive");
@@ -98,10 +123,10 @@ public class MainActivity extends AppCompatActivity {
             ImageView foodImage = (ImageView) findViewById(R.id.food_view);
             foodImage.setBackgroundResource(R.drawable.food_animation);
             foodAnimation = (AnimationDrawable) foodImage.getBackground();
-            scoreView = (PixelTextView) findViewById(R.id.scoreboard);
-            score = 0;
-            scoreView.setText("0");
         }
+
+        updateHealth();
+        displayHealth();
     }
 
     public void onButtonLeft(View v){
@@ -120,11 +145,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+        updateHealth();
+        displayHealth();
+    }
+
+    @Override
     public void onStop() {
         super.onStop();
 
         // Store pet info
-        String petInfoString = petName + "," + lastFed;
+        String petInfoString = petName + "," + lastFed + "," + health;
 
         Log.d("INFO", petInfoString);
 
@@ -160,20 +193,20 @@ public class MainActivity extends AppCompatActivity {
 
     public void onFeed(View v)
     {
-        // Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
-        // feed them
-        if (foodAnimation.isRunning()) {
-            foodAnimation.stop();
+        if (health < 10) {
+            // Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
+            // feed them
+            if (foodAnimation.isRunning()) {
+                foodAnimation.stop();
+            }
+
+            foodAnimation.start();
+
+            Calendar calendar = Calendar.getInstance();
+            lastFed = calendar.getTimeInMillis();
+
+            health++;
+            displayHealth();
         }
-
-        foodAnimation.start();
-
-        Calendar calendar = Calendar.getInstance();
-        lastFed = calendar.getTimeInMillis();
-
-        // TODO: do whatever with score if we want it.
-        score++;
-        Log.d("new score", String.valueOf(score));
-        scoreView.setText(String.valueOf(score));
     }
 }
