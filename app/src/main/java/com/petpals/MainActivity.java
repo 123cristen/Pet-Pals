@@ -73,16 +73,24 @@ public class MainActivity extends AppCompatActivity {
         return file;
     }
 
-    private void updateHealth() {
+    private void updateHealth(boolean justFed) {
         Calendar calendar = Calendar.getInstance();
         long now = calendar.getTimeInMillis();
-        int diff = (int) ((now - lastFed)/(1000)); // in seconds for testing
-                //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
 
-        if (health - diff >= 0) {
-            health = health - diff;
+        if (justFed) {
+            lastFed = now;
+            Intent intent = new Intent(this, HealthService.class);
+            intent.putExtra("LAST_FED", lastFed);
+            startService(intent);
         } else {
-            health = 0;
+            int diff = (int) ((now - lastFed)/(1000)); // in seconds for testing
+            //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
+
+            if (health - diff >= 0) {
+                health = health - diff;
+            } else {
+                health = 0;
+            }
         }
     }
 
@@ -95,14 +103,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.d("MainActivity", "Name: " + petName);
         b_left = (PixelButton) findViewById(R.id.button_left);
         b_middle = (PixelButton) findViewById(R.id.button_middle);
         b_right = (PixelButton) findViewById(R.id.button_right);
 
         String files = getPetInformation();
 
-        if (files.equals("")){
+        if (files == null){
             isPal = false;
             b_left.setText("receive");
             b_middle.setText("poke");
@@ -126,7 +133,20 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         else {
+            Log.d("File", files);
             isPal = true;
+
+            Intent intent = getIntent();
+            // From CreatePetActivity
+            if (intent.getStringExtra("PET_NAME") != null) {
+                petName = intent.getStringExtra("PET_NAME");
+                health = 10;
+                updateHealth(true);
+            } else {
+                updateHealth(false);
+            }
+
+            displayHealth();
 
             b_left.setText("send");
             b_middle.setText("poke");
@@ -158,9 +178,6 @@ public class MainActivity extends AppCompatActivity {
             foodImage.setBackgroundResource(R.drawable.food_animation);
             foodAnimation = (AnimationDrawable) foodImage.getBackground();
         }
-
-        updateHealth();
-        displayHealth();
     }
 
     public void onPoke (View v){
@@ -170,8 +187,10 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
-        updateHealth();
-        displayHealth();
+        if (isPal) {
+            updateHealth(false);
+            displayHealth();
+        }
     }
 
     @Override
@@ -195,6 +214,9 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Intent intent = new Intent(this, HealthService.class);
+        stopService(intent);
     }
 
     public void onSend(View v)
@@ -228,6 +250,7 @@ public class MainActivity extends AppCompatActivity {
             lastFed = calendar.getTimeInMillis();
 
             health++;
+            updateHealth(true);
             displayHealth();
         }
     }
