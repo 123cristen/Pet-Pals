@@ -55,6 +55,7 @@ public class Bluetooth extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Check which request we're responding to
+        Log.d(TAG, "onActivityResult");
         if (requestCode == REQUEST_ENABLE_BT) { // SEND
             // Make sure the request was successful
             if (resultCode == RESULT_OK) {

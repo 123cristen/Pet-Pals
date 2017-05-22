@@ -9,12 +9,16 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    AnimationDrawable palAnimation;
-    AnimationDrawable foodAnimation;
+    private AnimationDrawable palAnimation;
+    private AnimationDrawable foodAnimation;
+    private Bluetooth mBluetooth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mBluetooth = new Bluetooth();
 
         ImageView palImage = (ImageView) findViewById(R.id.pal_view);
         palImage.setBackgroundResource(R.drawable.pal_animation);
@@ -28,11 +32,13 @@ public class MainActivity extends AppCompatActivity {
 
     public void onSend(View v)
     {
+        mBluetooth.sendBluetooth();
         Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
+        mBluetooth.receiveBluetooth();
         Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
