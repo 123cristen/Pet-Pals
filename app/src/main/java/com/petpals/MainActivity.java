@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -18,8 +17,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Calendar;
-
-import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     PixelButton b_middle;
     PixelButton b_right;
 
-    boolean isPal;
+    boolean isPal = false;
     String petName;
     long lastFed = 0;
     int score;
@@ -65,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
         String[] values = file.split(",");
 
         if (values.length == 3) {
+            isPal = true;
             petName = values[0];
             lastFed = Long.parseLong(values[1]);
             health = Integer.parseInt(values[2]);
@@ -86,9 +84,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void displayHealth() {
-        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
-        scoreView.setText(Integer.toString(health));
+    private void updateDisplay() {
+        String newS = petName + "\n" + Integer.toString(health);
+        scoreView.setText(newS);
     }
 
     @Override
@@ -99,11 +97,11 @@ public class MainActivity extends AppCompatActivity {
         b_left = (PixelButton) findViewById(R.id.button_left);
         b_middle = (PixelButton) findViewById(R.id.button_middle);
         b_right = (PixelButton) findViewById(R.id.button_right);
+        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
 
-        String files = getPetInformation();
+        getPetInformation();
 
-        if (files.equals("")){
-            isPal = false;
+        if (!isPal){
             b_left.setText("receive");
             b_middle.setText("poke");
             b_right.setText("create");
@@ -126,8 +124,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         else {
-            isPal = true;
-
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
@@ -160,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         updateHealth();
-        displayHealth();
+        updateDisplay();
     }
 
     public void onPoke (View v){
@@ -171,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         updateHealth();
-        displayHealth();
+        updateDisplay();
     }
 
     @Override
@@ -228,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
             lastFed = calendar.getTimeInMillis();
 
             health++;
-            displayHealth();
+            updateDisplay();
         }
     }
 }
