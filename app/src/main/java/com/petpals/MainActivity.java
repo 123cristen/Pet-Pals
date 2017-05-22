@@ -102,11 +102,28 @@ public class MainActivity extends AppCompatActivity {
 
         String files = getPetInformation();
 
-        if (files == null || files == ""){
+        if (files.equals("")){
             isPal = false;
             b_left.setText("receive");
             b_middle.setText("poke");
             b_right.setText("create");
+            b_left.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onReceive(v);
+                }
+            });
+
+            b_middle.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPoke(v);
+                }
+            });
+
+            b_right.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPalCreate(v);
+                }
+            });
         }
         else {
             isPal = true;
@@ -114,6 +131,23 @@ public class MainActivity extends AppCompatActivity {
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
+            b_left.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onSend(v);
+                }
+            });
+
+            b_middle.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPoke(v);
+                }
+            });
+
+            b_right.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onFeed(v);
+                }
+            });
 
             ImageView palImage = (ImageView) findViewById(R.id.pal_view);
             palImage.setBackgroundResource(R.drawable.pal_animation);
@@ -129,21 +163,9 @@ public class MainActivity extends AppCompatActivity {
         displayHealth();
     }
 
-    public void onButtonLeft(View v){
-        if (isPal)  onSend(v);
-        else        onReceive(v);
+    public void onPoke (View v){
+        // TODO: do something fun
     }
-
-    public void onButtonMiddle(View v){
-        // TODO: insert some fun features
-        ;
-    }
-
-    public void onButtonRight(View v){
-        if (isPal)  onFeed(v);
-        else        onPalCreate(v);
-    }
-
     @Override
     public void onResume() {
         super.onResume();

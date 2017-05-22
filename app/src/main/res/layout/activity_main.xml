@@ -48,7 +48,6 @@
         android:id="@+id/button_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onButtonLeft"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
@@ -56,7 +55,6 @@
         android:id="@+id/button_middle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onButtonMiddle"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
@@ -65,7 +63,6 @@
         android:id="@+id/button_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onButtonRight"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
