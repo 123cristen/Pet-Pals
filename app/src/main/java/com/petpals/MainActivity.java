@@ -71,35 +71,57 @@ public class MainActivity extends AppCompatActivity {
         return file;
     }
 
-    private void updateHealth() {
+    private void updateHealth(boolean justFed) {
         Calendar calendar = Calendar.getInstance();
         long now = calendar.getTimeInMillis();
-        int diff = (int) ((now - lastFed)/(1000)); // in seconds for testing
-                //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
 
-        if (health - diff >= 0) {
-            health = health - diff;
+        if (justFed) {
+            lastFed = now;
+            Intent intent = new Intent(this, HealthService.class);
+            intent.putExtra("LAST_FED", lastFed);
+            startService(intent);
         } else {
-            health = 0;
+            int diff = (int) ((now - lastFed)/(1000)); // in seconds for testing
+            //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
+
+            if (health - diff >= 0) {
+                health = health - diff;
+            } else {
+                health = 0;
+            }
         }
+        updateDisplay();
     }
 
     private void updateDisplay() {
-        String newS = petName + "\n" + Integer.toString(health);
-        scoreView.setText(newS);
+        if (isPal) {
+            String newS = petName + "\n" + Integer.toString(health);
+            scoreView.setText(newS);
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.d("MainActivity", "Name: " + petName);
         b_left = (PixelButton) findViewById(R.id.button_left);
         b_middle = (PixelButton) findViewById(R.id.button_middle);
         b_right = (PixelButton) findViewById(R.id.button_right);
         scoreView = (PixelTextView) findViewById(R.id.scoreboard);
 
-        getPetInformation();
+        String files = "";
+        Intent intent = getIntent();
+        // From CreatePetActivity
+        if (intent.getStringExtra("PET_NAME") != null) {
+            isPal = true;
+            petName = intent.getStringExtra("PET_NAME");
+            health = 10;
+            updateHealth(true);
+        } else {
+//            updateHealth(false);
+            files = getPetInformation();
+        }
+
 
         if (!isPal){
             b_left.setText("receive");
@@ -124,6 +146,10 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         else {
+            Log.d("File", files);
+
+            updateDisplay();
+
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
@@ -154,9 +180,6 @@ public class MainActivity extends AppCompatActivity {
             foodImage.setBackgroundResource(R.drawable.food_animation);
             foodAnimation = (AnimationDrawable) foodImage.getBackground();
         }
-
-        updateHealth();
-        updateDisplay();
     }
 
     public void onPoke (View v){
@@ -164,15 +187,20 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public void onResume() {
+
         super.onResume();
 
-        updateHealth();
-        updateDisplay();
+        if (isPal) {
+            updateHealth(false);
+            updateDisplay();
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
+
+        Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
 
         // Store pet info
         String petInfoString = petName + "," + lastFed + "," + health;
@@ -191,6 +219,9 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Intent intent = new Intent(this, HealthService.class);
+        stopService(intent);
     }
 
     public void onSend(View v)
@@ -207,12 +238,13 @@ public class MainActivity extends AppCompatActivity {
         // create Pal
         Intent intent = new Intent(this, CreatePetActivity.class);
         startActivity(intent);
+        finish();
     }
 
     public void onFeed(View v)
     {
         if (health < 10) {
-            // Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
+
             // feed them
             if (foodAnimation.isRunning()) {
                 foodAnimation.stop();
@@ -224,7 +256,11 @@ public class MainActivity extends AppCompatActivity {
             lastFed = calendar.getTimeInMillis();
 
             health++;
+            updateHealth(true);
             updateDisplay();
+        }
+        else{
+             Toast.makeText(this, petName + " is full!", Toast.LENGTH_SHORT).show();
         }
     }
 }
