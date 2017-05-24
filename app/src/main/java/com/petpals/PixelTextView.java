@@ -31,6 +31,7 @@ public class PixelTextView extends android.support.v7.widget.AppCompatTextView {
         if (!isInEditMode()) {
             Typeface tf = Typeface.createFromAsset(getContext().getAssets(), "fonts/disposabledroid-bb.bold.ttf");
             setTypeface(tf);
+            this.setSingleLine(false);
         }
     }
 

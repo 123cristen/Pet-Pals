@@ -18,7 +18,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".CreatePetActivity"></activity>
+        <activity android:name=".CreatePetActivity" />
+
+        <service
+            android:name=".HealthService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
