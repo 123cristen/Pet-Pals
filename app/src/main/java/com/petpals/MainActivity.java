@@ -3,6 +3,8 @@ package com.petpals;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LevelListDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,8 +25,8 @@ public class MainActivity extends AppCompatActivity {
     String FILENAME = "pet_info";
     String file;
 
-    AnimationDrawable palAnimation;
     AnimationDrawable foodAnimation;
+    LevelListDrawable palLevelAnimation;
     PixelTextView scoreView;
     PixelButton b_left;
     PixelButton b_middle;
@@ -33,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
     boolean isPal = false;
     String petName;
     long lastFed = 0;
-    int score;
     int health = 0; // Max is 10
+    ImageView palImageView;
 
     private String getPetInformation() {
         FileInputStream fileInputStream = null;
@@ -93,8 +95,17 @@ public class MainActivity extends AppCompatActivity {
         updateDisplay();
     }
 
+    /* updateDisplay():
+     * Change Pal appearance based on currently health status.
+     * Update top right text
+     */
     private void updateDisplay() {
         if (isPal) {
+            palImageView.setImageLevel(health);
+
+            Drawable current = palLevelAnimation.getCurrent();
+            ((AnimationDrawable)current).start();
+
             String newS = petName + "\n" + Integer.toString(health);
             scoreView.setText(newS);
         }
@@ -118,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
             health = 10;
             updateHealth(true);
         } else {
-//            updateHealth(false);
+            updateHealth(false);
             files = getPetInformation();
         }
 
@@ -132,13 +143,11 @@ public class MainActivity extends AppCompatActivity {
                     onReceive(v);
                 }
             });
-
             b_middle.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onPoke(v);
                 }
             });
-
             b_right.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onPalCreate(v);
@@ -148,8 +157,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             Log.d("File", files);
 
-            updateDisplay();
-
+            // setup buttons
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
@@ -158,27 +166,25 @@ public class MainActivity extends AppCompatActivity {
                     onSend(v);
                 }
             });
-
             b_middle.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onPoke(v);
                 }
             });
-
             b_right.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onFeed(v);
                 }
             });
 
-            ImageView palImage = (ImageView) findViewById(R.id.pal_view);
-            palImage.setBackgroundResource(R.drawable.pal_animation);
-            palAnimation = (AnimationDrawable) palImage.getBackground();
-            palAnimation.start();
-
+            // setup graphics
+            palImageView = (ImageView) findViewById(R.id.pal_view);
+            palLevelAnimation = (LevelListDrawable) palImageView.getDrawable();
             ImageView foodImage = (ImageView) findViewById(R.id.food_view);
             foodImage.setBackgroundResource(R.drawable.food_animation);
             foodAnimation = (AnimationDrawable) foodImage.getBackground();
+
+            updateDisplay();
         }
     }
 
@@ -187,7 +193,6 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public void onResume() {
-
         super.onResume();
 
         if (isPal) {
