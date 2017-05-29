@@ -9,7 +9,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -23,9 +22,9 @@ import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static android.provider.AlarmClock.EXTRA_MESSAGE;
-
 public class MainActivity extends AppCompatActivity {
+
+    private Bluetooth mBluetooth;
 
     String FILENAME = "pet_info";
     String file;
@@ -37,10 +36,9 @@ public class MainActivity extends AppCompatActivity {
     PixelButton b_middle;
     PixelButton b_right;
 
-    boolean isPal;
+    boolean isPal = false;
     String petName;
     long lastFed = 0;
-    boolean justFed = false;
     int score;
     int health = 0; // Max is 10
 
@@ -60,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     public Handler handler = new Handler() {
         public void handleMessage(Message msg) {
-            displayHealth();
+            updateDisplay();
         }
     };
 
@@ -90,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
         String[] values = file.split(",");
 
         if (values.length == 3) {
+            isPal = true;
             petName = values[0];
             lastFed = Long.parseLong(values[1]);
             health = Integer.parseInt(values[2]);
@@ -98,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         return file;
     }
 
-    private void updateHealth() {
+    private void updateHealth(boolean justFed) {
         Calendar calendar = Calendar.getInstance();
         long now = calendar.getTimeInMillis();
 
@@ -114,11 +113,14 @@ public class MainActivity extends AppCompatActivity {
                 health = 0;
             }
         }
+        updateDisplay();
     }
 
-    private void displayHealth() {
-        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
-        scoreView.setText(Integer.toString(health));
+    private void updateDisplay() {
+        if (isPal) {
+            String newS = petName + "\n" + Integer.toString(health);
+            scoreView.setText(newS);
+        }
     }
 
     @Override
@@ -128,26 +130,51 @@ public class MainActivity extends AppCompatActivity {
         b_left = (PixelButton) findViewById(R.id.button_left);
         b_middle = (PixelButton) findViewById(R.id.button_middle);
         b_right = (PixelButton) findViewById(R.id.button_right);
+        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
 
-        String files = getPetInformation();
-
+        String files = "";
         Intent intent = getIntent();
         // From CreatePetActivity
-        if (intent.getStringExtra("PET_NAME") != null || files != null) {
+        if (intent.getStringExtra("PET_NAME") != null) {
             isPal = true;
+            petName = intent.getStringExtra("PET_NAME");
+            health = 10;
+            updateHealth(true);
+        } else {
+            files = getPetInformation();
+            updateHealth(false);
+        }
 
-            if (intent.getStringExtra("PET_NAME") != null) {
-                petName = intent.getStringExtra("PET_NAME");
-                health = 10;
-                justFed = true;
-            }
+        
+        mBluetooth = new Bluetooth(this);
 
-            Log.d("OnCreate", "Pet Name: " + petName);
+        if (!isPal){
+            b_left.setText("receive");
+            b_middle.setText("poke");
+            b_right.setText("create");
+            b_left.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onReceive(v);
+                }
+            });
 
-            updateHealth();
-            displayHealth();
+            b_middle.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPoke(v);
+                }
+            });
+
+            b_right.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPalCreate(v);
+                }
+            });
+        }
+        else {
+            Log.d("File", files);
+
+            updateDisplay();
             timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
-            Log.d("Health", "Scheduled");
 
             b_left.setText("send");
             b_middle.setText("poke");
@@ -178,30 +205,6 @@ public class MainActivity extends AppCompatActivity {
             ImageView foodImage = (ImageView) findViewById(R.id.food_view);
             foodImage.setBackgroundResource(R.drawable.food_animation);
             foodAnimation = (AnimationDrawable) foodImage.getBackground();
-        } else if (files == null){
-            isPal = false;
-            b_left.setText("receive");
-            b_middle.setText("poke");
-            b_right.setText("create");
-            b_left.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onReceive(v);
-                }
-            });
-
-            b_middle.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onPoke(v);
-                }
-            });
-
-            b_right.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onPalCreate(v);
-                }
-            });
-        }
-        else {
         }
     }
 
@@ -210,17 +213,20 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public void onResume() {
+
         super.onResume();
 
         if (isPal) {
-            updateHealth();
-            displayHealth();
+            updateHealth(false);
+            updateDisplay();
         }
     }
 
     @Override
     public void onStop() {
         super.onStop();
+
+        Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
 
         // Store pet info
         String petInfoString = petName + "," + lastFed + "," + health;
@@ -243,11 +249,13 @@ public class MainActivity extends AppCompatActivity {
 
     public void onSend(View v)
     {
+        mBluetooth.sendBluetooth();
         Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
+        mBluetooth.receiveBluetooth();
         Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
@@ -255,13 +263,12 @@ public class MainActivity extends AppCompatActivity {
         // create Pal
         Intent intent = new Intent(this, CreatePetActivity.class);
         startActivity(intent);
+        finish();
     }
 
     public void onFeed(View v)
     {
         if (health < 10) {
-            timer.cancel();
-            // Toast.makeText(this, "Clicked on Feed button", Toast.LENGTH_LONG).show();
             // feed them
             if (foodAnimation.isRunning()) {
                 foodAnimation.stop();
@@ -273,11 +280,14 @@ public class MainActivity extends AppCompatActivity {
             lastFed = calendar.getTimeInMillis();
 
             health++;
-            justFed = true;
+
             Log.d("Fed", "Health: " + health);
 
-            updateHealth();
-            displayHealth();
+            updateHealth(true);
+            updateDisplay();
+        }
+        else{
+             Toast.makeText(this, petName + " is full!", Toast.LENGTH_SHORT).show();
         }
 
         Log.d("Fed", "Health: " + health);

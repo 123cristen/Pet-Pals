@@ -26,5 +26,6 @@ public class CreatePetActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("PET_NAME", petName);
         startActivity(intent);
+        finish();
     }
 }
