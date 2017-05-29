@@ -22,6 +22,8 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Bluetooth mBluetooth;
+
     String FILENAME = "pet_info";
     String file;
 
@@ -131,6 +133,8 @@ public class MainActivity extends AppCompatActivity {
             files = getPetInformation();
         }
 
+        
+        mBluetooth = new Bluetooth(this);
 
         if (!isPal){
             b_left.setText("receive");
@@ -229,11 +233,13 @@ public class MainActivity extends AppCompatActivity {
 
     public void onSend(View v)
     {
+        mBluetooth.sendBluetooth();
         Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
+        mBluetooth.receiveBluetooth();
         Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
