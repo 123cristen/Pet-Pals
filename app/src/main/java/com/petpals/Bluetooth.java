@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.bluetooth.BluetoothDevice;
 import java.util.Set;
+import java.util.HashSet;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -15,6 +16,7 @@ import android.util.Log;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import java.lang.reflect.Method;
 
 // TODO(cristen): add error message if not enabled
 
@@ -23,12 +25,16 @@ public class Bluetooth extends AppCompatActivity {
     private static final String TAG = "Bluetooth: ";
     static final int REQUEST_ENABLE_BT = 3;
     static final int REQUEST_DISCOVERABLE = 4;
+    static final int REQUEST_CONNECT_DEVICE = 5;
     private BluetoothAdapter mBluetoothAdapter;
     private Activity mContext;
+    private ConnectThread mConnectThread;
+    private Set<BluetoothDevice> mUnpairedDevices;
 
 
     public Bluetooth (Activity activity) {
         this.mContext = activity;
+       mUnpairedDevices = new HashSet<BluetoothDevice>();
     }
 
     @Override
@@ -42,6 +48,21 @@ public class Bluetooth extends AppCompatActivity {
 
     }
 
+    public boolean createBond(BluetoothDevice btDevice)
+    {
+        try {
+            Log.d(TAG, "Start Pairing...");
+            Method m = btDevice.getClass().getMethod("createBond", (Class[]) null);
+            Boolean returnValue = (Boolean) m.invoke(btDevice, (Object[]) null);
+            Log.d(TAG, "Pairing finished.");
+            return returnValue;
+
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+        return false;
+    }
+
     // SEND: Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -51,9 +72,14 @@ public class Bluetooth extends AppCompatActivity {
                 // object and its info from the Intent.
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // Create a new device item
+                mUnpairedDevices.add(device);
 
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
+                Log.d(TAG, "Discovered: " + deviceName);
+            }
+            else if (mBluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                // selectDevice();
             }
         }
     };
@@ -72,13 +98,12 @@ public class Bluetooth extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 // The user enabled bluetooth
                 // The Intent's data Uri identifies which contact was selected.
-                selectDevice();
             }
             else {
                 Toast.makeText(getApplicationContext(), "Couldn't enable Bluetooth", Toast.LENGTH_LONG).show();
             }
         }
-        if (requestCode == REQUEST_DISCOVERABLE) { // RECEIVE
+        else if (requestCode == REQUEST_DISCOVERABLE) { // RECEIVE
             if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), "Couldn't enable discoverability", Toast.LENGTH_LONG).show();
             }
@@ -87,24 +112,43 @@ public class Bluetooth extends AppCompatActivity {
                 t.run();
             }
         }
+        else if (requestCode == REQUEST_CONNECT_DEVICE) {
+            // When DeviceListActivity returns with a device to connect
+            if (resultCode == Activity.RESULT_OK) {
+                // Get the device MAC address
+                String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                // Get the BLuetoothDevice object
+                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                // Attempt to connect to the device
+                if (mConnectThread != null) {
+                    mConnectThread.cancel();
+                    mConnectThread = null;
+                }
+
+                mConnectThread = new ConnectThread(device);
+                mConnectThread.run();
+            }
+
+        }
     }
 
     // SEND
     protected void selectDevice() {
-        final Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        CharSequence devices[] = new CharSequence[pairedDevices.size()];
-        if (pairedDevices.size() > 0) {
+        CharSequence devices[] = new CharSequence[mUnpairedDevices.size()];
+        if (mUnpairedDevices.size() > 0) {
             // There are paired devices. Get the name and address of each paired device.
             int i = 0;
-            for (BluetoothDevice device : pairedDevices) {
+            for (BluetoothDevice device : mUnpairedDevices) {
                 //String deviceName = device.getName();
                 //String deviceHardwareAddress = device.getAddress(); // MAC address
                 devices[i] = device.getName() + " " + device.getAddress();
                 i++;
             }
         }
-        // if none of paired devices are wanted, discover new ones
-        // mBluetoothAdapter.startDiscovery();
+        else {
+            Log.d(TAG, "no devices found");
+            return;
+        }
 
         final CharSequence[] innerDevices = devices;
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
@@ -117,7 +161,7 @@ public class Bluetooth extends AppCompatActivity {
                 CharSequence macAddr = nameAndAddr[1];
                 Log.d(TAG, "macAddr: " + macAddr);
                 BluetoothDevice connectDevice = null;
-                for (BluetoothDevice device : pairedDevices) {
+                for (BluetoothDevice device : mUnpairedDevices) {
                     Log.d(TAG, "device MAC: " + device.getAddress());
                     if (macAddr.equals(device.getAddress())) {
                         connectDevice = device;
@@ -128,8 +172,16 @@ public class Bluetooth extends AppCompatActivity {
                     Log.d(TAG, "device not found");
                 }
                 else {
-                    ConnectThread t = new ConnectThread(connectDevice);
-                    t.run();
+                    if (connectDevice.getBondState() != BluetoothDevice.BOND_BONDED) {
+                        createBond(connectDevice);
+                    }
+                    if (mConnectThread != null) {
+                        mConnectThread.cancel();
+                        mConnectThread = null;
+                    }
+
+                    mConnectThread = new ConnectThread(connectDevice);
+                    mConnectThread.run();
                 }
 
             }
@@ -143,18 +195,17 @@ public class Bluetooth extends AppCompatActivity {
 
     // RECEIVE
     protected void receiveBluetooth() {
-        // set to discoverable
-        Intent discoverableIntent =
-                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-        mContext.startActivityForResult(discoverableIntent, REQUEST_DISCOVERABLE);
-
         // get the Bluetooth adaptor
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             Toast.makeText(getApplicationContext(), "Device doesn't support Bluetooth", Toast.LENGTH_LONG).show();
             return;
         }
+        // set to discoverable
+        Intent discoverableIntent =
+                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+        mContext.startActivityForResult(discoverableIntent, REQUEST_DISCOVERABLE);
     }
 
     // SEND
@@ -169,7 +220,8 @@ public class Bluetooth extends AppCompatActivity {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             mContext.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         } else {
-            selectDevice();
+            Intent serverIntent = new Intent(mContext, DeviceListActivity.class);
+            startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
         }
     }
 

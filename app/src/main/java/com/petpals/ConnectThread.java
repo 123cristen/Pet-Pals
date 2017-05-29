@@ -36,7 +36,7 @@ public class ConnectThread extends Thread {
 
     public void run() {
         // Cancel discovery because it otherwise slows down the connection.
-        // mBluetoothAdapter.cancelDiscovery();
+        mBluetoothAdapter.cancelDiscovery();
 
         try {
             // Connect to the remote device through the socket. This call blocks
@@ -44,10 +44,10 @@ public class ConnectThread extends Thread {
             mmSocket.connect();
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
-            Log.d(TAG, "ConnectException");
+            Log.d(TAG, "ConnectException: "+connectException.getMessage());
             try {
                 mmSocket.close();
-            } catch (IOException closeException) {
+            } catch (Exception closeException) {
                 Log.e(TAG, "Could not close the client socket", closeException);
             }
             return;
