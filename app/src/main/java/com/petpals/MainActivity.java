@@ -92,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
                 health = 0;
             }
         }
-        updateDisplay();
     }
 
     /* updateDisplay():
@@ -115,11 +114,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
         b_left = (PixelButton) findViewById(R.id.button_left);
         b_middle = (PixelButton) findViewById(R.id.button_middle);
         b_right = (PixelButton) findViewById(R.id.button_right);
-        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
-
         String files = "";
         Intent intent = getIntent();
         // From CreatePetActivity
