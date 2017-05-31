@@ -15,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -63,6 +64,15 @@ public class MainActivity extends AppCompatActivity {
             lastFed = Long.parseLong(values[1]);
             health = Integer.parseInt(values[2]);
         }
+    }
+
+    private boolean removePet() {
+        isPal = false;
+        updateDisplay();
+        String dir = getFilesDir().getAbsolutePath();
+        File file = new File(dir, FILENAME);
+        
+        return file.delete();
     }
 
     private String getPetInformation() {
@@ -255,22 +265,24 @@ public class MainActivity extends AppCompatActivity {
 
         Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
 
-        // Store pet info
-        String petInfoString = getPetInformationString();
+        if (isPal) {
+            // Store pet info
+            String petInfoString = getPetInformationString();
 
-        Log.d("INFO", petInfoString);
+            Log.d("INFO", petInfoString);
 
-        FileOutputStream fileOutputStream = null;
-        try {
-            fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
-            fileOutputStream.write(petInfoString.getBytes());
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            FileOutputStream fileOutputStream = null;
+            try {
+                fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            try {
+                fileOutputStream.write(petInfoString.getBytes());
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -296,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
     public void onFeed(View v)
     {
         if (health < 10) {
-            // feed them
+            // feegd them
             if (foodAnimation.isRunning()) {
                 foodAnimation.stop();
             }
@@ -313,7 +325,7 @@ public class MainActivity extends AppCompatActivity {
             updateHealth(true);
             updateDisplay();
         }
-        else{
+        else {
              Toast.makeText(this, petName + " is full!", Toast.LENGTH_SHORT).show();
         }
 
