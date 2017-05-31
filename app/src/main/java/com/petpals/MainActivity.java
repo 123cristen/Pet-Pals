@@ -192,6 +192,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void onPoke (View v){
         // TODO: do something fun
+        float x = palImageView.getX();
+        float y = palImageView.getY();
+        int height = ((View) palImageView.getParent()).getHeight();
+        int width = ((View) palImageView.getParent()).getWidth();
+
+
     }
     @Override
     public void onResume() {
