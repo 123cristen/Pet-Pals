@@ -376,6 +376,7 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
                     // Attempt to connect to the device
                     mService.connect(device);
+                    sendMessage("HELLO!!!"); // getFile()
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -413,6 +414,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
+        if (mService != null) {
+            if (mService.getState() == BluetoothService.STATE_NONE) {
+                mService.start();
+            }
+        }
 
         if (isPal) {
             updateHealth(false);
@@ -426,35 +432,38 @@ public class MainActivity extends AppCompatActivity {
 
         Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
 
-        // Store pet info
-        String petInfoString = petName + "," + lastFed + "," + health;
+        if (isPal) {
+            // Store pet info
+            String petInfoString = petName + "," + lastFed + "," + health;
 
-        Log.d("INFO", petInfoString);
+            Log.d("INFO", petInfoString);
 
-        FileOutputStream fileOutputStream = null;
-        try {
-            fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            FileOutputStream fileOutputStream = null;
+            try {
+                fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            try {
+                fileOutputStream.write(petInfoString.getBytes());
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        try {
-            fileOutputStream.write(petInfoString.getBytes());
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
     }
 
     public void onSend(View v)
     {
-        sendMessage("HELLO!!!"); // getFile()
-        Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
+        connect(v);
+        // Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
-        //mBluetooth.receiveBluetooth();
-        Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
+        ensureDiscoverable();
+        // Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
     public void onPalCreate(View v){
