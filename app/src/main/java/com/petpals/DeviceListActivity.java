@@ -19,7 +19,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-//import com.javacodegeeks.R;
 import java.util.Set;
 
 public class DeviceListActivity extends Activity {
