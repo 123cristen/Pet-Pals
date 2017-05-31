@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LevelListDrawable;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     PixelButton b_right;
 
     boolean isPal = false;
+    boolean isMoving = false;
     String petName;
     long lastFed = 0;
     int health = 0; // Max is 10
@@ -123,6 +125,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private void updateDisplay() {
         if (isPal) {
+            palImageView.setVisibility(View.VISIBLE);
+            scoreView.setVisibility(View.VISIBLE);
             palImageView.setImageLevel(health);
 
             Drawable current = palLevelAnimation.getCurrent();
@@ -130,6 +134,10 @@ public class MainActivity extends AppCompatActivity {
 
             String newS = petName + "\n" + Integer.toString(health);
             scoreView.setText(newS);
+        }
+        else{
+            palImageView.setVisibility(View.INVISIBLE);
+            scoreView.setVisibility((View.INVISIBLE));
         }
     }
 
@@ -143,6 +151,14 @@ public class MainActivity extends AppCompatActivity {
         b_right = (PixelButton) findViewById(R.id.button_right);
         String files = "";
         Intent intent = getIntent();
+
+        // setup graphics
+        palImageView = (ImageView) findViewById(R.id.pal_view);
+        palLevelAnimation = (LevelListDrawable) palImageView.getDrawable();
+        ImageView foodImage = (ImageView) findViewById(R.id.food_view);
+        foodImage.setBackgroundResource(R.drawable.food_animation);
+        foodAnimation = (AnimationDrawable) foodImage.getBackground();
+
         // From CreatePetActivity
         if (intent.getStringExtra("PET_NAME") != null) {
             isPal = true;
@@ -176,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
                     onPalCreate(v);
                 }
             });
+            palImageView.setVisibility(View.INVISIBLE);
         }
         else {
             Log.d("File", files);
@@ -201,27 +218,69 @@ public class MainActivity extends AppCompatActivity {
                     onFeed(v);
                 }
             });
-
-            // setup graphics
-            palImageView = (ImageView) findViewById(R.id.pal_view);
-            palLevelAnimation = (LevelListDrawable) palImageView.getDrawable();
-            ImageView foodImage = (ImageView) findViewById(R.id.food_view);
-            foodImage.setBackgroundResource(R.drawable.food_animation);
-            foodAnimation = (AnimationDrawable) foodImage.getBackground();
-
-            updateDisplay();
+            palImageView.setVisibility(View.VISIBLE);
         }
-    }
-
-    public void onPoke (View v){
-        // TODO: do something fun
-        float x = palImageView.getX();
-        float y = palImageView.getY();
-        int height = ((View) palImageView.getParent()).getHeight();
-        int width = ((View) palImageView.getParent()).getWidth();
-
+        updateDisplay();
 
     }
+
+    // on poke, corgi walks horizontally
+    public void onPoke (View v) {
+        if (isMoving) return;
+        isMoving = true;
+        final float x = palImageView.getX();
+        final float y = palImageView.getY();
+        final int height = ((View) palImageView.getParent()).getHeight();
+        final int width = ((View) palImageView.getParent()).getWidth() + 50;
+        Handler handler1 = new Handler();
+        final float interval = 15f;
+        int n = (int) x / (int) interval + 50;
+        int i = 0;
+
+        // move to left until disappear
+        for (; i < n; i++){
+            handler1.postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    palImageView.setX(palImageView.getX() - interval);
+                }
+            }, 100 * i);
+        }
+
+        // move to right most
+        handler1.postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                palImageView.setX((float) width);
+            }
+        }, 100 * i);
+
+        // move from righ to center
+        n += (int) (width - x) / (int) interval;
+        for (; i < n; i++){
+            handler1.postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    palImageView.setX(palImageView.getX() - interval);
+                }
+            }, 100 * i);
+        }
+
+        // make sure it is at the center at last
+        handler1.postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                palImageView.setX(x);   
+                isMoving = false;
+            }
+        }, 100 * i);
+
+    }
+
     @Override
     public void onResume() {
         super.onResume();
