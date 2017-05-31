@@ -16,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -25,9 +26,45 @@ import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+
+import android.widget.Button;
+import android.widget.EditText;
+
 public class MainActivity extends AppCompatActivity {
 
-    private Bluetooth mBluetooth;
+    // Message types sent from the BluetoothChatService Handler
+    public static final int MESSAGE_STATE_CHANGE = 1;
+    public static final int MESSAGE_READ = 2;
+    public static final int MESSAGE_WRITE = 3;
+    public static final int MESSAGE_DEVICE_NAME = 4;
+    public static final int MESSAGE_TOAST = 5;
+
+
+    // Key names received from the BluetoothChatService Handler
+    public static final String DEVICE_NAME = "device_name";
+    public static final String TOAST = "toast";
+
+    // Intent request codes
+    private static final int REQUEST_CONNECT_DEVICE = 1;
+    private static final int REQUEST_ENABLE_BT = 2;
+    private EditText mOutEditText;
+    private Button mSendButton;
+
+    // Name of the connected device
+    private String mConnectedDeviceName = null;
+    // String buffer for outgoing messages
+    private StringBuffer mOutStringBuffer;
+
+    // Local Bluetooth adapter
+    private BluetoothAdapter mBluetoothAdapter = null;
+
+    // Member object for the service
+    private BluetoothService mService = null;
+
+    public int counter = 0;
 
     String FILENAME = "pet_info";
     String file;
@@ -47,24 +84,34 @@ public class MainActivity extends AppCompatActivity {
     ImageView palImageView;
 
     private final static int INTERVAL = 1000 * 10; // 1000 * 60 * 60;
-    Timer timer = new Timer ();
-    TimerTask hourlyTask = new TimerTask () {
-        @Override
-        public void run () {
-            Log.d("Health", "Decrease Health");
-
-            if (health > 0) {
-                health--;
-                handler.obtainMessage(1).sendToTarget();
-            }
-        }
-    };
+    Timer timer;
+    TimerTask hourlyTask;
 
     public Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             updateDisplay();
         }
     };
+
+    private void initializePetfromString(String petInformation) {
+        String[] values = petInformation.split(",");
+
+        if (values.length == 3) {
+            isPal = true;
+            petName = values[0];
+            lastFed = Long.parseLong(values[1]);
+            health = Integer.parseInt(values[2]);
+        }
+    }
+
+    private boolean removePet() {
+        isPal = false;
+        updateDisplay();
+        String dir = getFilesDir().getAbsolutePath();
+        File file = new File(dir, FILENAME);
+        
+        return file.delete();
+    }
 
     private String getPetInformation() {
         FileInputStream fileInputStream = null;
@@ -89,16 +136,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String file = stringBuilder.toString();
-        String[] values = file.split(",");
-
-        if (values.length == 3) {
-            isPal = true;
-            petName = values[0];
-            lastFed = Long.parseLong(values[1]);
-            health = Integer.parseInt(values[2]);
-        }
+        initializePetfromString(file);
 
         return file;
+    }
+
+    private String getPetInformationString() {
+        return petName + ","
+                + Long.toString(lastFed) + ","
+                + Integer.toString(health);
     }
 
     private void updateHealth(boolean justFed) {
@@ -108,11 +154,10 @@ public class MainActivity extends AppCompatActivity {
         if (justFed) {
             lastFed = now;
         } else {
-            int diff = (int) ((now - lastFed) / (1000)); // in seconds for testing
-            //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
-
+            int diff = (int) ((now - lastFed) / INTERVAL);
             if (health - diff >= 0) {
                 health = health - diff;
+                Log.d("Health", "Diff: " + diff);
             } else {
                 health = 0;
             }
@@ -171,7 +216,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         
-        mBluetooth = new Bluetooth(this);
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        // If the adapter is null, then Bluetooth is not supported
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         if (!isPal){
             b_left.setText("receive");
@@ -197,9 +248,6 @@ public class MainActivity extends AppCompatActivity {
         else {
             Log.d("File", files);
 
-            // setup buttons
-            timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
-
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
@@ -223,6 +271,135 @@ public class MainActivity extends AppCompatActivity {
         updateDisplay();
 
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        } else {
+            if (mService == null) setupService();
+        }
+    }
+
+    private void setupService() {
+        // Initialize the BluetoothChatService to perform bluetooth connections
+        mService = new BluetoothService(this, mHandler);
+
+        // Initialize the buffer for outgoing messages
+        mOutStringBuffer = new StringBuffer("");
+    }
+
+    @Override
+    public synchronized void onPause() {
+        super.onPause();
+
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Stop the Bluetooth chat services
+        if (mService != null) mService.stop();
+    }
+
+    private void ensureDiscoverable() {
+        if (mBluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
+    }
+
+    private void sendMessage(String message) {
+
+        // Check that we're actually connected before trying anything
+        if (mService.getState() != BluetoothService.STATE_CONNECTED) {
+            Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Check that there's actually something to send
+        if (message.length() > 0) {
+            // Get the message bytes and tell the BluetoothChatService to write
+            byte[] send = message.getBytes();
+            mService.write(send);
+            // Reset out string buffer to zero and clear the edit text field
+            mOutStringBuffer.setLength(0);
+            mOutEditText.setText(mOutStringBuffer);
+        }
+    }
+
+
+
+    // The Handler that gets information back from the BluetoothChatService
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_WRITE:
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    // construct a string from the buffer
+                    String writeMessage = new String(writeBuf);
+                    break;
+                case MESSAGE_READ:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    // construct a string from the valid bytes in the buffer
+                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    Toast.makeText(getApplicationContext(), "Received: "+readMessage, Toast.LENGTH_LONG).show();
+                    //initializePetFromString(readMessage);
+                    break;
+                case MESSAGE_DEVICE_NAME:
+                    // save the connected device's name
+                    mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                    Toast.makeText(getApplicationContext(), "Connected to "
+                            + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_TOAST:
+                    Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
+    };
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQUEST_CONNECT_DEVICE:
+                // When DeviceListActivity returns with a device to connect
+                if (resultCode == Activity.RESULT_OK) {
+                    // Get the device MAC address
+                    String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                    // Get the BLuetoothDevice object
+                    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                    // Attempt to connect to the device
+                    mService.connect(device);
+                    sendMessage("HELLO!!!"); // getFile()
+                }
+                break;
+            case REQUEST_ENABLE_BT:
+                // When the request to enable Bluetooth returns
+                if (resultCode == Activity.RESULT_OK) {
+                    // Bluetooth is now enabled, so set up a chat session
+                    setupService();
+                } else {
+                    // User did not enable Bluetooth or an error occured
+                    Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+        }
+    }
+
+    public void connect(View v) {
+        Intent serverIntent = new Intent(this, DeviceListActivity.class);
+        startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+    }
+
+    public void discoverable(View v) {
+        ensureDiscoverable();
+    }
+
 
     // on poke, corgi walks horizontally
     public void onPoke (View v) {
@@ -274,7 +451,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void run() {
-                palImageView.setX(x);   
+                palImageView.setX(x);
                 isMoving = false;
             }
         }, 100 * i);
@@ -284,6 +461,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
+        if (mService != null) {
+            if (mService.getState() == BluetoothService.STATE_NONE) {
+                mService.start();
+            }
+        }
+
+        if (isPal) {
+            TimerTask hourlyTask = new TimerTask () {
+                @Override
+                public void run () {
+                    Log.d("Health", "Decrease Health");
+
+                    if (health > 0) {
+                        health--;
+                        handler.obtainMessage(1).sendToTarget();
+                    }
+                }
+            };
+
+            timer = new Timer();
+            timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
+            Log.d("TIMER", "Restart timer");
+        }
 
         if (isPal) {
             updateHealth(false);
@@ -295,37 +495,46 @@ public class MainActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
 
+        if (timer != null) {
+            timer.cancel();
+        }
+
+        Log.d("TIMER", "Cancelled");
+
         Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
 
-        // Store pet info
-        String petInfoString = petName + "," + lastFed + "," + health;
+        if (isPal) {
+            // Store pet info
+            String petInfoString = getPetInformationString();
 
-        Log.d("INFO", petInfoString);
+            Log.d("INFO", petInfoString);
+            
+            FileOutputStream fileOutputStream = null;
+            try {
+                fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            try {
+                fileOutputStream.write(petInfoString.getBytes());
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-        FileOutputStream fileOutputStream = null;
-        try {
-            fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
-            fileOutputStream.write(petInfoString.getBytes());
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void onSend(View v)
     {
-        mBluetooth.sendBluetooth();
-        Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
+        connect(v);
+        // Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
-        mBluetooth.receiveBluetooth();
-        Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
+        ensureDiscoverable();
+        // Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
     public void onPalCreate(View v){
@@ -338,7 +547,7 @@ public class MainActivity extends AppCompatActivity {
     public void onFeed(View v)
     {
         if (health < 10) {
-            // feed them
+            // feegd them
             if (foodAnimation.isRunning()) {
                 foodAnimation.stop();
             }
@@ -355,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
             updateHealth(true);
             updateDisplay();
         }
-        else{
+        else {
              Toast.makeText(this, petName + " is full!", Toast.LENGTH_SHORT).show();
         }
 
