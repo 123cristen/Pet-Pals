@@ -3,6 +3,8 @@ package com.petpals;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LevelListDrawable;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
@@ -79,8 +81,8 @@ public class MainActivity extends AppCompatActivity {
     String FILENAME = "pet_info";
     String file;
 
-    AnimationDrawable palAnimation;
     AnimationDrawable foodAnimation;
+    LevelListDrawable palLevelAnimation;
     PixelTextView scoreView;
     PixelButton b_left;
     PixelButton b_middle;
@@ -89,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
     boolean isPal = false;
     String petName;
     long lastFed = 0;
-    int score;
     int health = 0; // Max is 10
+    ImageView palImageView;
 
     private final static int INTERVAL = 1000 * 10; // 1000 * 60 * 60;
     Timer timer = new Timer ();
@@ -147,6 +149,12 @@ public class MainActivity extends AppCompatActivity {
         return file;
     }
 
+    private String getPetInformationString() {
+        return petName + ","
+                + Long.toString(lastFed) + ","
+                + Integer.toString(health);
+    }
+
     private void updateHealth(boolean justFed) {
         Calendar calendar = Calendar.getInstance();
         long now = calendar.getTimeInMillis();
@@ -154,20 +162,26 @@ public class MainActivity extends AppCompatActivity {
         if (justFed) {
             lastFed = now;
         } else {
-            int diff = (int) ((now - lastFed) / (1000)); // in seconds for testing
-            //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
-
+            int diff = (int) ((now - lastFed) / INTERVAL);
             if (health - diff >= 0) {
                 health = health - diff;
             } else {
                 health = 0;
             }
         }
-        updateDisplay();
     }
 
+    /* updateDisplay():
+     * Change Pal appearance based on currently health status.
+     * Update top right text
+     */
     private void updateDisplay() {
         if (isPal) {
+            palImageView.setImageLevel(health);
+
+            Drawable current = palLevelAnimation.getCurrent();
+            ((AnimationDrawable)current).start();
+
             String newS = petName + "\n" + Integer.toString(health);
             scoreView.setText(newS);
         }
@@ -177,11 +191,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
         b_left = (PixelButton) findViewById(R.id.button_left);
         b_middle = (PixelButton) findViewById(R.id.button_middle);
         b_right = (PixelButton) findViewById(R.id.button_right);
-        scoreView = (PixelTextView) findViewById(R.id.scoreboard);
-
         String files = "";
         Intent intent = getIntent();
         // From CreatePetActivity
@@ -213,13 +226,11 @@ public class MainActivity extends AppCompatActivity {
                     onReceive(v);
                 }
             });
-
             b_middle.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onPoke(v);
                 }
             });
-
             b_right.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onPalCreate(v);
@@ -229,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             Log.d("File", files);
 
-            updateDisplay();
+            // setup buttons
             timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
 
             b_left.setText("send");
@@ -240,27 +251,25 @@ public class MainActivity extends AppCompatActivity {
                     onSend(v);
                 }
             });
-
             b_middle.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onPoke(v);
                 }
             });
-
             b_right.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     onFeed(v);
                 }
             });
 
-            ImageView palImage = (ImageView) findViewById(R.id.pal_view);
-            palImage.setBackgroundResource(R.drawable.pal_animation);
-            palAnimation = (AnimationDrawable) palImage.getBackground();
-            palAnimation.start();
-
+            // setup graphics
+            palImageView = (ImageView) findViewById(R.id.pal_view);
+            palLevelAnimation = (LevelListDrawable) palImageView.getDrawable();
             ImageView foodImage = (ImageView) findViewById(R.id.food_view);
             foodImage.setBackgroundResource(R.drawable.food_animation);
             foodAnimation = (AnimationDrawable) foodImage.getBackground();
+
+            updateDisplay();
         }
     }
 
@@ -394,10 +403,15 @@ public class MainActivity extends AppCompatActivity {
 
     public void onPoke (View v){
         // TODO: do something fun
+        float x = palImageView.getX();
+        float y = palImageView.getY();
+        int height = ((View) palImageView.getParent()).getHeight();
+        int width = ((View) palImageView.getParent()).getWidth();
+
+
     }
     @Override
     public void onResume() {
-
         super.onResume();
 
         if (isPal) {
