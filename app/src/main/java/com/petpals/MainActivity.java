@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LevelListDrawable;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,6 +21,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,6 +43,26 @@ public class MainActivity extends AppCompatActivity {
     long lastFed = 0;
     int health = 0; // Max is 10
     ImageView palImageView;
+
+    private final static int INTERVAL = 1000 * 10; // 1000 * 60 * 60;
+    Timer timer = new Timer ();
+    TimerTask hourlyTask = new TimerTask () {
+        @Override
+        public void run () {
+            Log.d("Health", "Decrease Health");
+
+            if (health > 0) {
+                health--;
+                handler.obtainMessage(1).sendToTarget();
+            }
+        }
+    };
+
+    public Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            updateDisplay();
+        }
+    };
 
     private String getPetInformation() {
         FileInputStream fileInputStream = null;
@@ -81,11 +105,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (justFed) {
             lastFed = now;
-            Intent intent = new Intent(this, HealthService.class);
-            intent.putExtra("LAST_FED", lastFed);
-            startService(intent);
         } else {
-            int diff = (int) ((now - lastFed)/(1000)); // in seconds for testing
+            int diff = (int) ((now - lastFed) / (1000)); // in seconds for testing
             //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
 
             if (health - diff >= 0) {
@@ -129,8 +150,8 @@ public class MainActivity extends AppCompatActivity {
             health = 10;
             updateHealth(true);
         } else {
-            updateHealth(false);
             files = getPetInformation();
+            updateHealth(false);
         }
 
         
@@ -160,6 +181,8 @@ public class MainActivity extends AppCompatActivity {
             Log.d("File", files);
 
             // setup buttons
+            timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
+
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
@@ -232,9 +255,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        Intent intent = new Intent(this, HealthService.class);
-        stopService(intent);
     }
 
     public void onSend(View v)
@@ -259,7 +279,6 @@ public class MainActivity extends AppCompatActivity {
     public void onFeed(View v)
     {
         if (health < 10) {
-
             // feed them
             if (foodAnimation.isRunning()) {
                 foodAnimation.stop();
@@ -271,11 +290,16 @@ public class MainActivity extends AppCompatActivity {
             lastFed = calendar.getTimeInMillis();
 
             health++;
+
+            Log.d("Fed", "Health: " + health);
+
             updateHealth(true);
             updateDisplay();
         }
         else{
              Toast.makeText(this, petName + " is full!", Toast.LENGTH_SHORT).show();
         }
+
+        Log.d("Fed", "Health: " + health);
     }
 }
