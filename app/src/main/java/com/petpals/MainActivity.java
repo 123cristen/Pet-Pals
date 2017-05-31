@@ -426,7 +426,10 @@ public class MainActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
 
-        timer.cancel();
+        if (timer != null) {
+            timer.cancel();
+        }
+
         Log.d("TIMER", "Cancelled");
 
         Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
