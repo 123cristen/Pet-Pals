@@ -106,9 +106,7 @@ public class MainActivity extends AppCompatActivity {
         if (justFed) {
             lastFed = now;
         } else {
-            int diff = (int) ((now - lastFed) / (1000)); // in seconds for testing
-            //(int) ((now - lastFed)/(1000 * 60 * 60)); // in hours
-
+            int diff = (int) ((now - lastFed) / INTERVAL);
             if (health - diff >= 0) {
                 health = health - diff;
             } else {
