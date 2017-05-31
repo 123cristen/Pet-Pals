@@ -45,24 +45,25 @@ public class MainActivity extends AppCompatActivity {
     ImageView palImageView;
 
     private final static int INTERVAL = 1000 * 10; // 1000 * 60 * 60;
-    Timer timer = new Timer ();
-    TimerTask hourlyTask = new TimerTask () {
-        @Override
-        public void run () {
-            Log.d("Health", "Decrease Health");
-
-            if (health > 0) {
-                health--;
-                handler.obtainMessage(1).sendToTarget();
-            }
-        }
-    };
+    Timer timer;
+    TimerTask hourlyTask;
 
     public Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             updateDisplay();
         }
     };
+
+    private void initializePetfromString(String petInformation) {
+        String[] values = petInformation.split(",");
+
+        if (values.length == 3) {
+            isPal = true;
+            petName = values[0];
+            lastFed = Long.parseLong(values[1]);
+            health = Integer.parseInt(values[2]);
+        }
+    }
 
     private String getPetInformation() {
         FileInputStream fileInputStream = null;
@@ -87,14 +88,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String file = stringBuilder.toString();
-        String[] values = file.split(",");
-
-        if (values.length == 3) {
-            isPal = true;
-            petName = values[0];
-            lastFed = Long.parseLong(values[1]);
-            health = Integer.parseInt(values[2]);
-        }
+        initializePetfromString(file);
 
         return file;
     }
@@ -115,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
             int diff = (int) ((now - lastFed) / INTERVAL);
             if (health - diff >= 0) {
                 health = health - diff;
+                Log.d("Health", "Diff: " + diff);
             } else {
                 health = 0;
             }
@@ -184,9 +179,6 @@ public class MainActivity extends AppCompatActivity {
         else {
             Log.d("File", files);
 
-            // setup buttons
-            timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
-
             b_left.setText("send");
             b_middle.setText("poke");
             b_right.setText("feed");
@@ -231,6 +223,24 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         if (isPal) {
+            TimerTask hourlyTask = new TimerTask () {
+                @Override
+                public void run () {
+                    Log.d("Health", "Decrease Health");
+
+                    if (health > 0) {
+                        health--;
+                        handler.obtainMessage(1).sendToTarget();
+                    }
+                }
+            };
+
+            timer = new Timer();
+            timer.scheduleAtFixedRate(hourlyTask, INTERVAL, INTERVAL);
+            Log.d("TIMER", "Restart timer");
+        }
+
+        if (isPal) {
             updateHealth(false);
             updateDisplay();
         }
@@ -240,10 +250,13 @@ public class MainActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
 
+        timer.cancel();
+        Log.d("TIMER", "Cancelled");
+
         Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
 
         // Store pet info
-        String petInfoString = petName + "," + lastFed + "," + health;
+        String petInfoString = getPetInformationString();
 
         Log.d("INFO", petInfoString);
 
