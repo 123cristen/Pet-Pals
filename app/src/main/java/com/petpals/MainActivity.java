@@ -25,9 +25,45 @@ import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+
+import android.widget.Button;
+import android.widget.EditText;
+
 public class MainActivity extends AppCompatActivity {
 
-    private Bluetooth mBluetooth;
+    // Message types sent from the BluetoothChatService Handler
+    public static final int MESSAGE_STATE_CHANGE = 1;
+    public static final int MESSAGE_READ = 2;
+    public static final int MESSAGE_WRITE = 3;
+    public static final int MESSAGE_DEVICE_NAME = 4;
+    public static final int MESSAGE_TOAST = 5;
+
+
+    // Key names received from the BluetoothChatService Handler
+    public static final String DEVICE_NAME = "device_name";
+    public static final String TOAST = "toast";
+
+    // Intent request codes
+    private static final int REQUEST_CONNECT_DEVICE = 1;
+    private static final int REQUEST_ENABLE_BT = 2;
+    private EditText mOutEditText;
+    private Button mSendButton;
+
+    // Name of the connected device
+    private String mConnectedDeviceName = null;
+    // String buffer for outgoing messages
+    private StringBuffer mOutStringBuffer;
+
+    // Local Bluetooth adapter
+    private BluetoothAdapter mBluetoothAdapter = null;
+
+    // Member object for the service
+    private BluetoothService mService = null;
+
+    public int counter = 0;
 
     String FILENAME = "pet_info";
     String file;
@@ -164,7 +200,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         
-        mBluetooth = new Bluetooth(this);
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        // If the adapter is null, then Bluetooth is not supported
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         if (!isPal){
             b_left.setText("receive");
@@ -219,6 +261,135 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        } else {
+            if (mService == null) setupService();
+        }
+    }
+
+    private void setupService() {
+        // Initialize the BluetoothChatService to perform bluetooth connections
+        mService = new BluetoothService(this, mHandler);
+
+        // Initialize the buffer for outgoing messages
+        mOutStringBuffer = new StringBuffer("");
+    }
+
+    @Override
+    public synchronized void onPause() {
+        super.onPause();
+
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Stop the Bluetooth chat services
+        if (mService != null) mService.stop();
+    }
+
+    private void ensureDiscoverable() {
+        if (mBluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
+    }
+
+    private void sendMessage(String message) {
+
+        // Check that we're actually connected before trying anything
+        if (mService.getState() != BluetoothService.STATE_CONNECTED) {
+            Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Check that there's actually something to send
+        if (message.length() > 0) {
+            // Get the message bytes and tell the BluetoothChatService to write
+            byte[] send = message.getBytes();
+            mService.write(send);
+            // Reset out string buffer to zero and clear the edit text field
+            mOutStringBuffer.setLength(0);
+            mOutEditText.setText(mOutStringBuffer);
+        }
+    }
+
+
+
+    // The Handler that gets information back from the BluetoothChatService
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_WRITE:
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    // construct a string from the buffer
+                    String writeMessage = new String(writeBuf);
+                    break;
+                case MESSAGE_READ:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    // construct a string from the valid bytes in the buffer
+                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    Toast.makeText(getApplicationContext(), "Received: "+readMessage, Toast.LENGTH_LONG).show();
+                    //initializePetFromString(readMessage);
+                    break;
+                case MESSAGE_DEVICE_NAME:
+                    // save the connected device's name
+                    mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                    Toast.makeText(getApplicationContext(), "Connected to "
+                            + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_TOAST:
+                    Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
+    };
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQUEST_CONNECT_DEVICE:
+                // When DeviceListActivity returns with a device to connect
+                if (resultCode == Activity.RESULT_OK) {
+                    // Get the device MAC address
+                    String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                    // Get the BLuetoothDevice object
+                    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                    // Attempt to connect to the device
+                    mService.connect(device);
+                    sendMessage("HELLO!!!"); // getFile()
+                }
+                break;
+            case REQUEST_ENABLE_BT:
+                // When the request to enable Bluetooth returns
+                if (resultCode == Activity.RESULT_OK) {
+                    // Bluetooth is now enabled, so set up a chat session
+                    setupService();
+                } else {
+                    // User did not enable Bluetooth or an error occured
+                    Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+        }
+    }
+
+    public void connect(View v) {
+        Intent serverIntent = new Intent(this, DeviceListActivity.class);
+        startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+    }
+
+    public void discoverable(View v) {
+        ensureDiscoverable();
+    }
+
+
     public void onPoke (View v){
         // TODO: do something fun
         float x = palImageView.getX();
@@ -231,6 +402,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
+        if (mService != null) {
+            if (mService.getState() == BluetoothService.STATE_NONE) {
+                mService.start();
+            }
+        }
 
         if (isPal) {
             TimerTask hourlyTask = new TimerTask () {
@@ -260,7 +436,10 @@ public class MainActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
 
-        timer.cancel();
+        if (timer != null) {
+            timer.cancel();
+        }
+
         Log.d("TIMER", "Cancelled");
 
         Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
@@ -270,7 +449,7 @@ public class MainActivity extends AppCompatActivity {
             String petInfoString = getPetInformationString();
 
             Log.d("INFO", petInfoString);
-
+            
             FileOutputStream fileOutputStream = null;
             try {
                 fileOutputStream = openFileOutput(FILENAME, Context.MODE_PRIVATE);
@@ -284,18 +463,19 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+
     }
 
     public void onSend(View v)
     {
-        mBluetooth.sendBluetooth();
-        Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
+        connect(v);
+        // Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
-        mBluetooth.receiveBluetooth();
-        Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
+        ensureDiscoverable();
+        // Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
     }
 
     public void onPalCreate(View v){
