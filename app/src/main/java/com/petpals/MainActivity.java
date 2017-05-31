@@ -99,6 +99,12 @@ public class MainActivity extends AppCompatActivity {
         return file;
     }
 
+    private String getPetInformationString() {
+        return petName + ","
+                + Long.toString(lastFed) + ","
+                + Integer.toString(health);
+    }
+
     private void updateHealth(boolean justFed) {
         Calendar calendar = Calendar.getInstance();
         long now = calendar.getTimeInMillis();
