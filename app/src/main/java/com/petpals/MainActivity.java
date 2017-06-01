@@ -97,11 +97,59 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private void setisPal(boolean b){
+        if(b){
+            isPal = true;
+            palImageView.setVisibility(View.VISIBLE);
+            scoreView.setVisibility(View.VISIBLE);
+            b_left.setText("send");
+            b_middle.setText("poke");
+            b_right.setText("feed");
+            b_left.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onSend(v);
+                }
+            });
+            b_middle.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPoke(v);
+                }
+            });
+            b_right.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onFeed(v);
+                }
+            });
+        }else{
+            isPal = false;
+            palImageView.setVisibility(View.INVISIBLE);
+            scoreView.setVisibility((View.INVISIBLE));
+            b_left.setText("receive");
+            b_middle.setText("poke");
+            b_right.setText("create");
+            b_left.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onReceive(v);
+                }
+            });
+            b_middle.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPoke(v);
+                }
+            });
+            b_right.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    onPalCreate(v);
+                }
+            });
+        }
+    }
+
     private void initializePetfromString(String petInformation) {
         String[] values = petInformation.split(",");
 
         if (values.length == 3) {
-            isPal = true;
+            setisPal(true);
             petName = values[0];
             lastFed = Long.parseLong(values[1]);
             health = Integer.parseInt(values[2]);
@@ -109,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean removePet() {
-        isPal = false;
+        setisPal(false);
         updateDisplay();
         String dir = getFilesDir().getAbsolutePath();
         File file = new File(dir, FILENAME);
@@ -140,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String file = stringBuilder.toString();
-        initializePetfromString(file);
+        initializePetfromString(file); // call setIsPal within this function.
 
         return file;
     }
@@ -174,19 +222,12 @@ public class MainActivity extends AppCompatActivity {
      */
     private void updateDisplay() {
         if (isPal) {
-            palImageView.setVisibility(View.VISIBLE);
-            scoreView.setVisibility(View.VISIBLE);
             palImageView.setImageLevel(health);
-
             Drawable current = palLevelAnimation.getCurrent();
             ((AnimationDrawable)current).start();
 
             String newS = petName + "\n" + Integer.toString(health);
             scoreView.setText(newS);
-        }
-        else{
-            palImageView.setVisibility(View.INVISIBLE);
-            scoreView.setVisibility((View.INVISIBLE));
         }
     }
 
@@ -211,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
 
         // From CreatePetActivity
         if (intent.getStringExtra("PET_NAME") != null) {
-            isPal = true;
+            setisPal(true);
             petName = intent.getStringExtra("PET_NAME");
             health = 10;
             updateHealth(true);
@@ -220,6 +261,7 @@ public class MainActivity extends AppCompatActivity {
             updateHealth(false);
         }
 
+        if (!isPal) setisPal(false);
         
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // If the adapter is null, then Bluetooth is not supported
@@ -229,50 +271,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (!isPal){
-            b_left.setText("receive");
-            b_middle.setText("poke");
-            b_right.setText("create");
-            b_left.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onReceive(v);
-                }
-            });
-            b_middle.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onPoke(v);
-                }
-            });
-            b_right.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onPalCreate(v);
-                }
-            });
-            palImageView.setVisibility(View.INVISIBLE);
-        }
-        else {
-            Log.d("File", files);
-
-            b_left.setText("send");
-            b_middle.setText("poke");
-            b_right.setText("feed");
-            b_left.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onSend(v);
-                }
-            });
-            b_middle.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onPoke(v);
-                }
-            });
-            b_right.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    onFeed(v);
-                }
-            });
-            palImageView.setVisibility(View.VISIBLE);
-        }
         updateDisplay();
 
     }
