@@ -352,7 +352,8 @@ public class MainActivity extends AppCompatActivity {
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     Toast.makeText(getApplicationContext(), "Received: "+readMessage, Toast.LENGTH_LONG).show();
-                    // initializePetFromString(readMessage);
+                    initializePetfromString(readMessage);
+                    updateDisplay();
                     break;
                 case MESSAGE_DEVICE_NAME:
                     // save the connected device's name
@@ -360,7 +361,8 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "Connected to "
                             + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
                     if (shouldSend == 1) {
-                        sendFile("Hello!!");
+                        sendFile(getPetInformationString());
+                        removePet();
                         shouldSend = 0;
                     }
                     break;
