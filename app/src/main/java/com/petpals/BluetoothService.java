@@ -323,6 +323,11 @@ public class BluetoothService {
             synchronized (BluetoothService.this) {
                 mConnectThread = null;
             }
+            // Send the name of the connected device back to the UI Activity
+            Message msg = mHandler.obtainMessage(MainActivity.MESSAGE_CONNECTED);
+            Bundle bundle = new Bundle();
+            msg.setData(bundle);
+            mHandler.sendMessage(msg);
             // Start the connected thread
             connected(mmSocket, mmDevice);
         }

@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int MESSAGE_WRITE = 3;
     public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
+    public static final int MESSAGE_CONNECTED = 6;
 
 
     // Key names received from the BluetoothChatService Handler
@@ -65,6 +66,9 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothService mService = null;
 
     public int counter = 0;
+
+    // will be set to 1 once connected to a device
+    private int shouldSend = 0;
 
     String FILENAME = "pet_info";
     String file;
@@ -196,6 +200,7 @@ public class MainActivity extends AppCompatActivity {
         b_right = (PixelButton) findViewById(R.id.button_right);
         String files = "";
         Intent intent = getIntent();
+        shouldSend = 0;
 
         // setup graphics
         palImageView = (ImageView) findViewById(R.id.pal_view);
@@ -313,7 +318,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void sendMessage(String message) {
+    private void sendFile(String message) {
 
         // Check that we're actually connected before trying anything
         if (mService.getState() != BluetoothService.STATE_CONNECTED) {
@@ -327,7 +332,6 @@ public class MainActivity extends AppCompatActivity {
             mService.write(send);
             // Reset out string buffer to zero and clear the edit text field
             mOutStringBuffer.setLength(0);
-            mOutEditText.setText(mOutStringBuffer);
         }
     }
 
@@ -348,17 +352,24 @@ public class MainActivity extends AppCompatActivity {
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     Toast.makeText(getApplicationContext(), "Received: "+readMessage, Toast.LENGTH_LONG).show();
-                    //initializePetFromString(readMessage);
+                    // initializePetFromString(readMessage);
                     break;
                 case MESSAGE_DEVICE_NAME:
                     // save the connected device's name
                     mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
                     Toast.makeText(getApplicationContext(), "Connected to "
                             + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    if (shouldSend == 1) {
+                        sendFile("Hello!!");
+                        shouldSend = 0;
+                    }
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
                             Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_CONNECTED:
+                    shouldSend = 1;
                     break;
             }
         }
@@ -375,7 +386,6 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
                     // Attempt to connect to the device
                     mService.connect(device);
-                    sendMessage("HELLO!!!"); // getFile()
                 }
                 break;
             case REQUEST_ENABLE_BT:
