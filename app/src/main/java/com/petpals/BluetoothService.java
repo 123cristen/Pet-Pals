@@ -198,7 +198,7 @@ public class BluetoothService {
         // Send a failure message back to the Activity
         Message msg = mHandler.obtainMessage(MainActivity.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(MainActivity.TOAST, "Unable to connect device");
+        bundle.putString(MainActivity.TOAST, "Unable to connect device, please try again");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
     }

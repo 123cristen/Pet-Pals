@@ -349,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    Toast.makeText(getApplicationContext(), "Received: "+readMessage, Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getApplicationContext(), "Received: "+readMessage, Toast.LENGTH_LONG).show();
                     initializePetfromString(readMessage);
                     updateDisplay();
                     break;
@@ -511,8 +511,6 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d("TIMER", "Cancelled");
 
-        Toast.makeText(this, "onStop", Toast.LENGTH_LONG).show();
-
         if (isPal) {
             // Store pet info
             String petInfoString = getPetInformationString();
@@ -538,13 +536,13 @@ public class MainActivity extends AppCompatActivity {
     public void onSend(View v)
     {
         connect(v);
-        // Toast.makeText(this, "Clicked on Send button", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Sending... please wait", Toast.LENGTH_LONG).show();
     }
 
     public void onReceive(View v)
     {
         ensureDiscoverable();
-        // Toast.makeText(this, "Clicked on Receive button", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Ready to receive!", Toast.LENGTH_LONG).show();
     }
 
     public void onPalCreate(View v){
